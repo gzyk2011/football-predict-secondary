@@ -348,7 +348,7 @@ def make_predictions(args):
         push_url = "http://www.pushplus.plus/send"
         push_data = {
             "token": push_token,
-            "title": f"价值投注65%+edge15%以上场次推荐 ({pd.Timestamp.now().strftime('%m-%d')})",
+            "title": f"次级联赛价值投注65%+edge15%场次推荐 ({pd.Timestamp.now().strftime('%m-%d')})",
             "content": push_html,
             "template": "html"
         }
