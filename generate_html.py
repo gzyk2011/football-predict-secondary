@@ -313,7 +313,7 @@ html = f"""<!DOCTYPE html>
 <body>
     <div class="container">
         <div class="header">
-            <h1>⚽ Football Value Bets</h1>
+            <h1>⚽ 次级联赛的价值投注推荐</h1>
             <div class="subtitle">AI-Powered Predictions with Proven Edge</div>
             <div class="update-time">📅 Updated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</div>
             <div class="visitor-count">👥 <span id="visitor-count">Loading...</span></div>
