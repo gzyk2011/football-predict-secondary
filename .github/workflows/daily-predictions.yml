@@ -1,0 +1,69 @@
+name: Secondary Leagues Predictions
+
+on:
+  schedule:
+    # 每天的 UTC 时间 08:30 (北京时间下午 16:30，和主系统错开半小时防拥堵)
+    - cron: '30 8 * * *'
+  workflow_dispatch:  # 允许在网页上手动点击运行
+
+permissions:
+  contents: write  # 允许机器人推送代码修改
+
+jobs:
+  update-predictions:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run predictions with odds and PushPlus
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+        run: |
+          export PYTHONPATH="${GITHUB_WORKSPACE}:${PYTHONPATH}"
+          
+          # 强制删除旧预测数据
+          rm -f data/value_bets_*.csv
+          
+          # 第一步：只用次级联赛历史数据训练
+          python main.py --train --leagues ECH,SB,NED,POR,MLS,BRA,ARG,J1,K1,AUS
+          
+          # 第二步：扫描次级联赛今日漏洞
+          python main.py --predict --odds --leagues ECH,SB,NED,POR,MLS,BRA,ARG,J1,K1,AUS --days 3
+      
+      - name: Generate HTML page
+        run: |
+          python generate_html.py
+      
+      - name: Commit and push if changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          
+          git config --local rebase.autoStash true
+          
+          git add index.html || true
+          git add data/*.csv 2>/dev/null || true
+          git add src/models/*.joblib 2>/dev/null || true
+          
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 自动更新全球次级联赛预测 $(date +%Y-%m-%d)" && git pull --rebase && git push)
