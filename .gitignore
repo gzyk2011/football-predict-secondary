@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+
+# Data files
+/data/*
+!data/value_bets_*.csv
+!data/football_matches_historical.csv
+*.db
+*.sqlite
+
+# --- 针对你的路径 (src/models) 进行的精准修改 ---
+# 1. 允许 Git 进入 src 文件夹及其子文件夹
+!src/
+!src/models/
+
+# 2. 允许提交 src/models 目录下的所有 .joblib 模型文件
+!src/models/*.joblib
+
+# 3. 忽略其他类型的临时模型文件（保持整洁）
+*.pkl
+*.h5
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
