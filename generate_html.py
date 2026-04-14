@@ -23,12 +23,18 @@ print(f"Loading predictions from: {latest_csv}")
 df = pd.read_csv(latest_csv)
 print(f"Found {len(df)} value bets")
 
-# Calculate stats
+# Calculate stats safely to avoid ZeroDivisionError
 total_bets = len(df)
-avg_confidence = df['confidence'].mean() * 100
-avg_edge = df['edge'].mean() * 100
-total_stake = df['kelly_stake_pct'].sum()
-potential_roi = (df['expected_value'].sum() / len(df)) * 100
+if total_bets > 0:
+    avg_confidence = df['confidence'].mean() * 100
+    avg_edge = df['edge'].mean() * 100
+    total_stake = df['kelly_stake_pct'].sum()
+    potential_roi = (df['expected_value'].sum() / total_bets) * 100
+else:
+    avg_confidence = 0
+    avg_edge = 0
+    total_stake = 0
+    potential_roi = 0
 
 # Generate HTML
 html = f"""<!DOCTYPE html>
@@ -218,65 +224,6 @@ html = f"""<!DOCTYPE html>
             margin: 5px 0;
         }}
         
-        .footer {{
-            text-align: center;
-            color: white;
-            margin-top: 40px;
-            padding: 20px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
-        }}
-        
-        .feedback-section {{
-            background: rgba(255,255,255,0.95);
-            padding: 30px;
-            border-radius: 15px;
-            margin: 30px 0;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }}
-        
-        .feedback-title {{
-            color: #333;
-            font-size: 1.5em;
-            margin-bottom: 15px;
-        }}
-        
-        .feedback-buttons {{
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 20px;
-        }}
-        
-        .feedback-btn {{
-            padding: 15px 30px;
-            font-size: 1.2em;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: bold;
-        }}
-        
-        .feedback-btn:hover {{
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }}
-        
-        .thumbs-up {{
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }}
-        
-        .thumbs-down {{
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-        }}
-        
         .visitor-count {{
             background: rgba(255,255,255,0.2);
             color: white;
@@ -287,25 +234,12 @@ html = f"""<!DOCTYPE html>
             font-size: 0.9em;
         }}
         
-        .thank-you {{
-            display: none;
-            background: #10b981;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            font-size: 1.1em;
-        }}
-        
         @media (max-width: 768px) {{
             .header h1 {{
                 font-size: 1.8em;
             }}
             .bet-details {{
                 grid-template-columns: 1fr;
-            }}
-            .feedback-buttons {{
-                flex-direction: column;
             }}
         }}
     </style>
@@ -409,40 +343,8 @@ for idx, bet in df.iterrows():
         </div>
 """
 
-# Footer
+# Footer and clean up
 html += f"""
-        <div class="feedback-section">
-            <div class="feedback-title">💬 Did our predictions help you?</div>
-            <p style="color: #666; margin-bottom: 10px;">Your feedback helps us improve!</p>
-            <div class="feedback-buttons">
-                <button class="feedback-btn thumbs-up" onclick="submitFeedback('helpful')">
-                    <span style="font-size: 1.5em;">👍</span>
-                    <span>Yes, Helpful!</span>
-                </button>
-                <button class="feedback-btn thumbs-down" onclick="submitFeedback('not-helpful')">
-                    <span style="font-size: 1.5em;">👎</span>
-                    <span>Not Helpful</span>
-                </button>
-            </div>
-            <div id="thank-you-message" class="thank-you"></div>
-        </div>
-
-        <div class="footer">
-            <h3>💡 How to Use These Predictions</h3>
-            <p>1. Check odds on your bookmaker (Bet365, William Hill, etc.)</p>
-            <p>2. Look for matches with high confidence (60%+) and good edge (15%+)</p>
-            <p>3. Use recommended stake sizes based on your total bankroll</p>
-            <p>4. Only bet what you can afford to lose</p>
-            
-            <div class="disclaimer" style="margin-top: 20px; opacity: 0.8; font-size: 0.9em;">
-                ⚠️ <strong>Disclaimer:</strong> Betting involves risk. These are AI predictions based on historical data and do not guarantee wins. 
-                Past performance does not indicate future results. Bet responsibly.
-            </div>
-            
-            <p style="margin-top: 20px;">
-
-            </p>
-        </div>
     </div>
     
     <script>
@@ -460,34 +362,8 @@ html += f"""
             document.getElementById('visitor-count').textContent = count + (count === 1 ? ' visitor today' : ' visitors today');
         }}
         
-        function submitFeedback(type) {{
-            const buttons = document.querySelector('.feedback-buttons');
-            const thankYou = document.getElementById('thank-you-message');
-            buttons.style.display = 'none';
-            thankYou.style.display = 'block';
-            if (type === 'helpful') {{
-                thankYou.innerHTML = '🎉 Thank you! We\'re glad our predictions helped you!';
-                thankYou.style.background = '#10b981';
-            }} else {{
-                thankYou.innerHTML = '💡 Thanks for your feedback! We\'re working hard to improve.';
-                thankYou.style.background = '#f59e0b';
-            }}
-            const feedbackKey = 'feedback_' + new Date().toISOString().split('T')[0];
-            const feedback = JSON.parse(localStorage.getItem(feedbackKey) || '{{"helpful": 0, "not-helpful": 0}}');
-            feedback[type]++;
-            localStorage.setItem(feedbackKey, JSON.stringify(feedback));
-            sessionStorage.setItem('feedback_given_' + new Date().toISOString().split('T')[0], 'true');
-        }}
-        
         document.addEventListener('DOMContentLoaded', function() {{
             updateVisitorCount();
-            const today = new Date().toISOString().split('T')[0];
-            if (sessionStorage.getItem('feedback_given_' + today)) {{
-                document.querySelector('.feedback-buttons').style.display = 'none';
-                document.getElementById('thank-you-message').innerHTML = '✅ Thank you for your earlier feedback!';
-                document.getElementById('thank-you-message').style.display = 'block';
-                document.getElementById('thank-you-message').style.background = '#6366f1';
-            }}
         }});
     </script>
 </body>
